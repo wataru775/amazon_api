@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <title>バーコード検索 - Bootstrap & jQuery - </title>
+</head>
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#">バーコード検索 - Bootstrap & jQuery - </a>
+    </nav>
+    <div class="container" style="padding-top: 70px">
+        <div class="alert alert-danger alert-dismissible fade hide" >
+        </div>
+        <div>
+            <span style="">
+            <span class="label fa fa-barcode" style="font-size:36px;"> ASIN : </span>
+                <input type="text" class="fa" name="ASIN" style="font-size:36px;" value="427405019X" placeholder="427405019X" maxlength="10" />
+            <span id="searchItems" href="#" class="fa fa-paw btn btn-info">
+                Scan
+            </span>
+            </span>
+        </div>
+        <div></div>
+        <div id="cards" class="row"></div>
+    </div>
+</body>
+</html>
+<script>
+    $(function() {
+        $("INPUT[NAME=ASIN]").on( "keydown", function(event) {
+            if (event.which == 13) {
+                enterClick()
+            }
+            // ENTER以外
+            if(event.which == 8){
+                // BS
+                return;
+            }
+            if (event.which >= 48 && event.which <= 57 || event.which == 88  ) {
+                // 0 - 9 & X
+                return;
+            }
+            return false;
+        });
+
+        $("span[id=searchItems]").on("click",function(){
+            enterClick();
+        });
+    });
+    function enterClick(){
+        hiddenAlert();
+        if($("INPUT[NAME=ASIN]").val().length == 0 ){
+            showAlert("未入力");
+            return;
+        }
+        if($("INPUT[NAME=ASIN]").val().length !=10 ){
+            showAlert("桁が足りません");
+            return;
+        }
+        searchItems($("INPUT[NAME=ASIN]").val());
+        $("INPUT[NAME=ASIN]").val("");
+        return false;
+    }
+    function searchItems(asin){
+        $.ajax({
+            url: "http://api.mmpp.org/amazon/searchItems?ASIN=" + asin,
+        }).then(
+            function(data, status, xhr) {
+                if(data.code === 200 ) {
+                    for (let i = 0; i < data.results.length; i++) {
+                        let book = data.results[i];
+                        $("div#cards").append(createBookCard(book));
+                    }
+                    return;
+                }
+                showAlert(data.message);
+            },
+            function(xhr, status, error) {
+                // 通信失敗時の処理
+            }
+        );
+
+    }
+    function createBookCard(book){
+        return $("<section>").addClass("card")
+        .append($("<div>").addClass("container-fluid")
+            .append("<div>").addClass("card-img-top").append(
+                $("<a>").attr('href',book.detailURL[0])
+                    .append(
+                        $("<img>").attr("src",book.image[0]))))
+            .append($("<div>").addClass("card-body")
+                .append($("<h5>").addClass("card-title").html(book.title[0]))
+            )
+    }
+    function showAlert(message){
+        $("div.alert").addClass('show');
+        $("div.alert").removeClass('hide');
+        $("div.alert").html(message);
+    }
+    function hiddenAlert(){
+        $("div.alert").html('');
+        $("div.alert").removeClass('show');
+        $("div.alert").addClass('hide');
+    }
+</script>
